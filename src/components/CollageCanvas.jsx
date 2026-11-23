@@ -21,7 +21,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
       title: 'PHOTOBOOTH MEMORY',
       subtitle: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       fontId: 'sans',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: '"Montserrat Variable", "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       color: '#111827',
       showDate: true,
       logoUrl: null,
@@ -295,7 +295,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
       onPointerUp={handlePointerUp}
       onTouchMove={handleContainerPointerMove}
       onTouchEnd={handlePointerUp}
-      className="relative select-none shadow-2xl transition-all duration-300 mx-auto"
+      className="collage-preview relative select-none shadow-2xl transition-all duration-300 mx-auto overflow-hidden"
       style={{
         aspectRatio: layout.aspectRatio,
         backgroundColor: frameSettings.customColor || '#ffffff',
@@ -318,16 +318,16 @@ const CollageCanvas = forwardRef(function CollageCanvas(
 
       {/* Main Photo Grid */}
       <div
-        className="w-full h-full flex flex-col justify-between"
+        className="w-full h-full min-h-0 flex flex-col justify-between"
         style={{
           gap: `${frameSettings.borderWidth || 12}px`,
         }}
       >
         <div
-          className="grid flex-1 w-full"
+          className="grid flex-1 min-h-0 min-w-0 w-full"
           style={{
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
             gap: `${frameSettings.borderWidth || 12}px`,
           }}
         >
@@ -342,7 +342,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
             return (
               <div
                 key={index}
-                className="relative overflow-hidden flex items-center justify-center"
+                className="relative min-h-0 min-w-0 overflow-hidden flex items-center justify-center"
                 style={{
                   borderRadius: `${frameSettings.cornerRadius || 8}px`,
                   backgroundColor: 'transparent',
@@ -354,7 +354,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
                     <img
                       src={photo.rawDataUrl || photo.dataUrl}
                       alt={`Booth Shot ${photoIndex + 1}`}
-                      className="w-full h-full object-cover transition-all"
+                      className="w-full h-full min-h-0 min-w-0 object-cover transition-all"
                       style={{
                         filter: activeFilter.cssFilter,
                         objectFit: 'cover',

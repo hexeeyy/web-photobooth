@@ -58,7 +58,7 @@ export default function CuratedGallery({
   if (isSlideshowActive && displayedSessions.length > 0) {
     const current = displayedSessions[slideshowIndex % displayedSessions.length];
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
+      <div className="glass-theme fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
         <button
           onClick={() => setIsSlideshowActive(false)}
           className="absolute top-6 right-6 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full text-white text-xs font-bold uppercase tracking-wider"
@@ -87,7 +87,7 @@ export default function CuratedGallery({
   }
 
   return (
-    <div className="w-full min-h-screen bg-zinc-950 text-white flex flex-col">
+    <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col">
       
       {/* Top Header */}
       <div className="sticky top-0 z-20 px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between">

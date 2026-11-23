@@ -1,6 +1,6 @@
 // Dual-Layer Storage Service: High-Capacity Client IndexedDB + Optional Server Sync
 const DB_NAME = 'WebPhotoboothDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_SESSIONS = 'sessions';
 
 function openDB() {
@@ -89,6 +89,7 @@ export async function saveSession(session) {
     });
   } catch (err) {
     console.warn('Local IndexedDB write error:', err);
+    throw err;
   }
 
   // 2. Sync to the optional local server during development

@@ -20,7 +20,7 @@ export default function EditorControls({
   const [activeTab, setActiveTab] = useState('layout'); // 'layout', 'frame', 'watermark', 'stickers', 'filter'
 
   return (
-    <div className="w-full bg-zinc-900 border-t border-white/10 flex flex-col max-h-[50vh] sm:max-h-none overflow-hidden select-none">
+    <div className="w-full bg-zinc-900 border-t border-white/10 flex flex-col max-h-[40vh] sm:max-h-none overflow-hidden select-none">
       
       {/* Navigation Tabs */}
       <div className="flex items-center justify-around border-b border-white/10 px-2 py-2 overflow-x-auto no-scrollbar bg-black/40">

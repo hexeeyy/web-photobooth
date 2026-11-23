@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { Image as ImageIcon, Share2, Printer, RotateCcw, Film } from 'lucide-react';
 import CameraView from './components/CameraView';
@@ -37,7 +37,7 @@ export default function App() {
     title: 'PHOTOBOOTH MEMORY',
     subtitle: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     fontId: 'sans',
-    fontFamily: '"Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Montserrat Variable", "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     color: '#111827',
     showDate: true,
     logoUrl: null,
@@ -54,7 +54,7 @@ export default function App() {
   const [shareSession, setShareSession] = useState(null);
   const [shareError, setShareError] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const collageCanvasRef = useRef(null);
 
@@ -90,8 +90,8 @@ export default function App() {
   };
 
   // Re-generate high-res collage when design or layout changes
-  const updateCollageDataUrl = async () => {
-    if (collageCanvasRef.current && capturedPhotos.length > 0) {
+  const updateCollageDataUrl = useCallback(async () => {
+    if (collageCanvasRef.current) {
       try {
         const url = await collageCanvasRef.current.getHighResDataUrl();
         setCollageDataUrl(url);
@@ -101,7 +101,7 @@ export default function App() {
       }
     }
     return null;
-  };
+  }, []);
 
   useEffect(() => {
     if (currentView === 'editor' && capturedPhotos.length > 0) {
@@ -118,12 +118,13 @@ export default function App() {
     stickers,
     capturedPhotos,
     selectedFilterId,
+    updateCollageDataUrl,
   ]);
 
   // Persist session to IndexedDB
-  const handleSaveCurrentSession = async () => {
+  const handleSaveCurrentSession = useCallback(async () => {
     if (!currentSessionId || capturedPhotos.length === 0) return null;
-    setIsSaving(true);
+    setSaveError('');
     try {
       const url = await updateCollageDataUrl();
       const sessionData = {
@@ -142,11 +143,20 @@ export default function App() {
       return sessionData;
     } catch (e) {
       console.error('Failed to auto-save session:', e);
+      setSaveError('Could not save this session on this device. Please keep this page open and try again.');
       return null;
-    } finally {
-      setIsSaving(false);
     }
-  };
+  }, [
+    currentSessionId,
+    capturedPhotos,
+    updateCollageDataUrl,
+    layoutId,
+    selectedFilterId,
+    frameSettings,
+    watermarkSettings,
+    stickers,
+    collageDataUrl,
+  ]);
 
   // Trigger auto-save whenever user updates collage in editor
   useEffect(() => {
@@ -156,7 +166,17 @@ export default function App() {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [layoutId, frameSettings, watermarkSettings, stickers, selectedFilterId]);
+  }, [
+    currentView,
+    currentSessionId,
+    capturedPhotos,
+    layoutId,
+    frameSettings,
+    watermarkSettings,
+    stickers,
+    selectedFilterId,
+    handleSaveCurrentSession,
+  ]);
 
   // Sticker actions
   const handleAddSticker = (emoji) => {
@@ -312,7 +332,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-zinc-950 text-white flex flex-col justify-between overflow-x-hidden font-sans">
+    <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col justify-between overflow-x-hidden font-sans">
       
       {/* 1. CAMERA VIEW */}
       {currentView === 'booth' && (
@@ -322,22 +342,12 @@ export default function App() {
             selectedFilterId={selectedFilterId}
             onFilterChange={setSelectedFilterId}
             onCaptureComplete={handleCaptureComplete}
+            onOpenGallery={() => setCurrentView('gallery')}
             onCancel={() => {
               if (capturedPhotos.length > 0) setCurrentView('editor');
               else setCurrentView('gallery');
             }}
           />
-
-          {/* Gallery Shortcut Button Floating on Booth */}
-          <div className="no-print absolute top-3 right-28 z-20">
-            <button
-              onClick={() => setCurrentView('gallery')}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center gap-1.5 active:scale-95"
-            >
-              <ImageIcon size={14} />
-              Gallery
-            </button>
-          </div>
         </div>
       )}
 
@@ -422,11 +432,11 @@ export default function App() {
               />
 
               {/* Action Buttons Under Collage */}
-              <div className="w-full flex items-center justify-center gap-3 mt-4">
+              <div className="w-full flex flex-wrap items-stretch justify-center gap-2 sm:gap-3 mt-4">
                 <button
                   onClick={handleOpenShare}
                   disabled={isPublishing}
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg active:scale-95"
+                  className="min-w-[130px] flex-1 justify-center px-3 sm:px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-bold text-[10px] sm:text-xs flex items-center gap-2 shadow-lg active:scale-95"
                 >
                   <Share2 size={16} />
                   {isPublishing ? 'Preparing Link...' : 'Share & QR'}
@@ -435,7 +445,7 @@ export default function App() {
                 {collageOutput === 'photo' && (
                   <button
                     onClick={handlePrint}
-                    className="px-5 py-2.5 bg-white text-zinc-950 hover:bg-zinc-100 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg active:scale-95"
+                    className="min-w-[130px] flex-1 justify-center px-3 sm:px-5 py-2.5 bg-white text-zinc-950 hover:bg-zinc-100 rounded-2xl font-bold text-[10px] sm:text-xs flex items-center gap-2 shadow-lg active:scale-95"
                   >
                     <Printer size={16} />
                     Print Photo Collage
@@ -445,6 +455,11 @@ export default function App() {
               {shareError && (
                 <p role="alert" className="w-full mt-2 text-center text-xs text-red-400">
                   {shareError}
+                </p>
+              )}
+              {saveError && (
+                <p role="alert" className="w-full mt-2 text-center text-xs text-red-400">
+                  {saveError}
                 </p>
               )}
 

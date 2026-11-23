@@ -110,8 +110,8 @@ export default function ShareModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative w-full max-w-sm bg-zinc-900 border border-white/20 rounded-3xl p-6 shadow-2xl text-white flex flex-col items-center">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center overflow-y-auto p-4">
+      <div className="glass-panel relative my-auto w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-zinc-900 border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl text-white flex flex-col items-center">
         
         {/* Close Button */}
         <button

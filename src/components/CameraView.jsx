@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, SwitchCamera, Video, Sparkles, CheckCircle2, RotateCcw, Play, Square, Settings, Volume2, VolumeX, Eye, Wand2 } from 'lucide-react';
+import { Camera, SwitchCamera, Video, Sparkles, CheckCircle2, RotateCcw, Play, Square, Settings, Volume2, VolumeX, Eye, Wand2, Images } from 'lucide-react';
 import { playCountdownBeep, playShutterSound, initAudio } from '../services/audio';
 import { FILTERS, getFilterById } from '../constants/filters';
 import { generateDemoShots } from '../services/demoShots';
@@ -9,7 +9,8 @@ export default function CameraView({
   selectedFilterId = 'normal',
   onFilterChange,
   onCaptureComplete,
-  onCancel
+  onCancel,
+  onOpenGallery,
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -307,7 +308,7 @@ export default function CameraView({
   const currentFilter = getFilterById(selectedFilterId);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden select-none">
+    <div className="glass-theme relative w-full h-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden select-none">
       
       {/* Flash overlay */}
       {isFlashing && (
@@ -315,46 +316,54 @@ export default function CameraView({
       )}
 
       {/* Top Header Bar */}
-      <div className="relative z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+      <div className="relative z-20 flex items-center justify-between gap-1 px-2 py-2 sm:gap-2 sm:px-4 sm:py-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
         <button
           onClick={onCancel}
-          className="text-xs uppercase tracking-wider font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-95"
+          className="shrink-0 text-[10px] sm:text-xs uppercase tracking-wider font-semibold px-2 sm:px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-95"
         >
           Exit
         </button>
 
         {/* Shot Counter Pill */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/10 text-xs font-medium">
+        <div className="min-w-0 flex-1 flex items-center justify-center gap-1 px-2 sm:px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/10 text-[10px] sm:text-xs font-medium whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
           <span>
             {capturedShots.length} / {targetCount} Shots
           </span>
-          <span className="text-white/50 text-[10px] pl-1">• 5s Video Clips</span>
+          <span className="hidden sm:inline text-white/50 text-[10px] pl-1">• 5s Video Clips</span>
         </div>
 
         {/* Audio Toggle & Camera Flip */}
-        <div className="flex items-center gap-2">
+        <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+          <button
+            onClick={onOpenGallery}
+            className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
+            title="Gallery"
+            aria-label="Gallery"
+          >
+            <Images size={17} />
+          </button>
           <button
             onClick={handleLoadDemo}
-            className="px-2.5 py-1 rounded-full bg-rose-600/80 hover:bg-rose-500 backdrop-blur-md text-xs font-bold flex items-center gap-1 active:scale-95"
+            className="px-2 py-1 sm:px-2.5 rounded-full bg-rose-600/80 hover:bg-rose-500 backdrop-blur-md text-xs font-bold flex items-center gap-1 active:scale-95"
             title="Load Demo Photos & 5s Clips"
           >
             <Wand2 size={13} />
-            <span className="text-[10px]">Demo</span>
+            <span className="hidden sm:inline text-[10px]">Demo</span>
           </button>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
+            className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
             title="Toggle Sound"
           >
-            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-white/40" />}
+            {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} className="text-white/40" />}
           </button>
           <button
             onClick={toggleFacingMode}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
+            className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
             title="Flip Camera"
           >
-            <SwitchCamera size={18} />
+            <SwitchCamera size={17} />
           </button>
         </div>
       </div>
@@ -510,7 +519,7 @@ export default function CameraView({
       </div>
 
       {/* Bottom Main Shutter Controls */}
-      <div className="relative z-20 px-6 pt-2 pb-6 bg-black flex items-center justify-around gap-4 border-t border-white/5">
+      <div className="relative z-20 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-6 bg-black flex items-center justify-around gap-4 border-t border-white/5">
         
         {/* Timer Duration Toggle */}
         <button

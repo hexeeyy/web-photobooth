@@ -21,7 +21,7 @@ export const FRAME_PATTERNS = [
 ];
 
 export const FONTS = [
-  { id: 'sans', name: 'Modern Sans', family: '"Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+  { id: 'sans', name: 'Modern Sans', family: '"Montserrat Variable", "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
   { id: 'serif', name: 'Classic Serif', family: '"Playfair Display", Georgia, serif' },
   { id: 'script', name: 'Retro Script', family: '"Pacifico", cursive' },
   { id: 'cursive', name: 'Handwritten', family: '"Caveat", cursive' },

@@ -92,7 +92,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-4">
+      <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-4">
         <div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mb-3"></div>
         <p className="text-sm font-medium text-white/70">Loading your photobooth memory...</p>
       </div>
@@ -101,7 +101,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
 
   if (error || !session) {
     return (
-      <div className="w-full min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center">
         <h3 className="text-lg font-bold text-red-400 mb-2">{error || 'Session not found'}</h3>
         <p className="text-xs text-white/50 max-w-xs mb-6">
           This photobooth memory may be stored on the main booth device or was removed.
@@ -118,7 +118,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
   }
 
   return (
-    <div className="w-full min-h-screen bg-zinc-950 text-white flex flex-col pb-12">
+    <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col pb-12">
       
       {/* Top Banner */}
       <div className="no-print px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-30">
