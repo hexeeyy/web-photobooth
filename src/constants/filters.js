@@ -1,0 +1,87 @@
+export const FILTERS = [
+  {
+    id: 'normal',
+    name: 'Natural',
+    subtitle: 'True to life',
+    badge: 'Original',
+    cssFilter: 'none',
+    canvasFilter: 'none',
+    colorPreview: '#ffffff',
+  },
+  {
+    id: 'bw-noir',
+    name: 'B&W Noir',
+    subtitle: 'High contrast dramatic',
+    badge: 'Popular',
+    cssFilter: 'grayscale(100%) contrast(145%) brightness(95%)',
+    canvasFilter: 'grayscale(100%) contrast(145%) brightness(95%)',
+    colorPreview: '#222222',
+  },
+  {
+    id: 'bw-vintage',
+    name: 'B&W Vintage',
+    subtitle: 'Soft silver grain',
+    badge: 'Retro',
+    cssFilter: 'grayscale(100%) contrast(110%) brightness(105%) sepia(15%)',
+    canvasFilter: 'grayscale(100%) contrast(110%) brightness(105%) sepia(15%)',
+    colorPreview: '#666666',
+  },
+  {
+    id: 'sepia',
+    name: '1970s Sepia',
+    subtitle: 'Warm aged film',
+    badge: 'Vintage',
+    cssFilter: 'sepia(85%) contrast(115%) brightness(95%) saturate(120%)',
+    canvasFilter: 'sepia(85%) contrast(115%) brightness(95%) saturate(120%)',
+    colorPreview: '#a2764b',
+  },
+  {
+    id: 'y2k-flash',
+    name: 'Y2K Disposable',
+    subtitle: 'Flash punch & grain',
+    badge: 'Trendy',
+    cssFilter: 'contrast(130%) saturate(140%) brightness(108%) hue-rotate(-8deg)',
+    canvasFilter: 'contrast(130%) saturate(140%) brightness(108%) hue-rotate(-8deg)',
+    colorPreview: '#f43f5e',
+  },
+  {
+    id: 'golden-hour',
+    name: 'Golden Hour',
+    subtitle: 'Sun-drenched warmth',
+    badge: 'Warm',
+    cssFilter: 'sepia(30%) saturate(150%) brightness(105%) contrast(108%)',
+    canvasFilter: 'sepia(30%) saturate(150%) brightness(105%) contrast(108%)',
+    colorPreview: '#eab308',
+  },
+  {
+    id: 'cyberpunk',
+    name: 'Cyber Neon',
+    subtitle: 'Futuristic pop',
+    badge: 'Vivid',
+    cssFilter: 'contrast(135%) saturate(160%) hue-rotate(190deg)',
+    canvasFilter: 'contrast(135%) saturate(160%) hue-rotate(190deg)',
+    colorPreview: '#06b6d4',
+  },
+  {
+    id: 'pastel-bloom',
+    name: 'Pastel Glam',
+    subtitle: 'Soft dream glow',
+    badge: 'Glow',
+    cssFilter: 'brightness(112%) contrast(92%) saturate(115%)',
+    canvasFilter: 'brightness(112%) contrast(92%) saturate(115%)',
+    colorPreview: '#ec4899',
+  },
+  {
+    id: 'cinematic-teal',
+    name: 'Teal & Orange',
+    subtitle: 'Cinematic mood',
+    badge: 'Cinema',
+    cssFilter: 'contrast(120%) saturate(125%) hue-rotate(25deg)',
+    canvasFilter: 'contrast(120%) saturate(125%) hue-rotate(25deg)',
+    colorPreview: '#0d9488',
+  }
+];
+
+export function getFilterById(id) {
+  return FILTERS.find((f) => f.id === id) || FILTERS[0];
+}
