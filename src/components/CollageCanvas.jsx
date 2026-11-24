@@ -1,11 +1,59 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import { getLayoutById } from '../constants/layouts';
+import { getAdaptiveGrid, getLayoutById } from '../constants/layouts';
 import { getFilterById } from '../constants/filters';
 import { Play, Pause, Trash2, Move } from 'lucide-react';
+
+function getCustomFrameSlots(customFrame, photoCount) {
+  const count = Math.max(1, Math.min(12, Number(photoCount) || customFrame.slots.length));
+  if (count === 3) return customFrame.slots;
+
+  let columns;
+  let rows;
+
+  if (count === 1) {
+    columns = 1;
+    rows = 1;
+  } else if (count === 2) {
+    columns = 1;
+    rows = 2;
+  } else if (count <= 4) {
+    columns = 2;
+    rows = 2;
+  } else if (count <= 6) {
+    columns = 2;
+    rows = 3;
+  } else if (count <= 9) {
+    columns = 3;
+    rows = 3;
+  } else {
+    columns = 3;
+    rows = 4;
+  }
+
+  const area = { x: 143, y: 148, w: 576, h: 1125 };
+  const gap = 18;
+  const slotWidth = (area.w - gap * (columns - 1)) / columns;
+  const slotHeight = (area.h - gap * (rows - 1)) / rows;
+  const slots = [];
+
+  for (let index = 0; index < count; index++) {
+    const row = Math.floor(index / columns);
+    const column = index % columns;
+    slots.push({
+      x: area.x + column * (slotWidth + gap),
+      y: area.y + row * (slotHeight + gap),
+      w: slotWidth,
+      h: slotHeight,
+    });
+  }
+
+  return slots;
+}
 
 const CollageCanvas = forwardRef(function CollageCanvas(
   {
     layoutId = 'strip-4',
+    photoCount,
     photos = [],
     selectedFilterId = 'normal',
     frameSettings = {
@@ -36,6 +84,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
 ) {
   const containerRef = useRef(null);
   const layout = getLayoutById(layoutId);
+  const customFrame = layout.customFrame;
 
   // Dragging sticker state
   const [activeStickerId, setActiveStickerId] = useState(null);
@@ -77,6 +126,95 @@ const CollageCanvas = forwardRef(function CollageCanvas(
     }
     ctx.fillRect(0, 0, targetW, targetH);
 
+    const customFrame = layout.customFrame;
+    if (customFrame) {
+      // Load photos and draw them into the exact slots from the frame metadata.
+      const loadedImages = await Promise.all(
+        photos.map((p) => {
+          return new Promise((resolve) => {
+            if (!p) return resolve(null);
+            const src = p.rawDataUrl || p.dataUrl;
+            if (!src) return resolve(null);
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = src;
+          });
+        })
+      );
+
+      const activeFilter = getFilterById(selectedFilterId);
+      getCustomFrameSlots(customFrame, photoCount).forEach((slot, index) => {
+        const img = loadedImages[index % (loadedImages.length || 1)];
+        if (!img) return;
+        const bleed = 3;
+        const photoSlot = {
+          x: slot.x - bleed,
+          y: slot.y - bleed,
+          w: slot.w + bleed * 2,
+          h: slot.h + bleed * 2,
+        };
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(photoSlot.x, photoSlot.y, photoSlot.w, photoSlot.h);
+        ctx.clip();
+
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const slotRatio = photoSlot.w / photoSlot.h;
+        let drawW;
+        let drawH;
+        let drawX;
+        let drawY;
+
+        if (imgRatio > slotRatio) {
+          drawH = photoSlot.h;
+          drawW = photoSlot.h * imgRatio;
+          drawX = photoSlot.x - (drawW - photoSlot.w) / 2;
+          drawY = photoSlot.y;
+        } else {
+          drawW = photoSlot.w;
+          drawH = photoSlot.w / imgRatio;
+          drawX = photoSlot.x;
+          drawY = photoSlot.y - (drawH - photoSlot.h) / 2;
+        }
+
+        ctx.filter = activeFilter?.canvasFilter && activeFilter.canvasFilter !== 'none'
+          ? activeFilter.canvasFilter
+          : 'none';
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        ctx.restore();
+      });
+
+      await new Promise((resolve) => {
+        const frameImage = new Image();
+        frameImage.crossOrigin = 'anonymous';
+        frameImage.onload = () => {
+          ctx.drawImage(frameImage, 0, 0, targetW, targetH);
+          resolve();
+        };
+        frameImage.onerror = () => resolve();
+        frameImage.src = customFrame.imageUrl;
+      });
+
+      stickers.forEach((s) => {
+        ctx.save();
+        const stickerX = (s.x / 100) * targetW;
+        const stickerY = (s.y / 100) * targetH;
+        const stickerSize = Math.round(s.size * 3.5);
+        ctx.translate(stickerX, stickerY);
+        ctx.rotate(((s.rotation || 0) * Math.PI) / 180);
+        ctx.font = `${stickerSize}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(s.emoji || '✨', 0, 0);
+        ctx.restore();
+      });
+
+      return canvas;
+    }
+
     // 2. Background Pattern (Polka dots or Checker)
     if (frameSettings.pattern === 'dots') {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
@@ -111,9 +249,10 @@ const CollageCanvas = forwardRef(function CollageCanvas(
     const gap = (frameSettings.borderWidth || 16) * 4;
     const cornerRadius = (frameSettings.cornerRadius || 8) * 4;
 
-    const isDouble = layout.gridConfig.isDoubleStrip;
-    const columns = layout.gridConfig.columns;
-    const rows = layout.gridConfig.rows;
+    const adaptiveGrid = getAdaptiveGrid(layout, photoCount);
+    const isDouble = Boolean(layout.gridConfig.isDoubleStrip);
+    const columns = adaptiveGrid.columns;
+    const rows = adaptiveGrid.rows;
 
     // Reserve height for watermark at bottom
     const watermarkHeight = layout.id === 'polaroid' ? 700 : 380;
@@ -172,13 +311,14 @@ const CollageCanvas = forwardRef(function CollageCanvas(
     };
 
     if (isDouble) {
-      // Double 2x6 strip side-by-side
+      let imgIdx = 0;
       for (let r = 0; r < rows; r++) {
-        const img = loadedImages[r % loadedImages.length];
-        // Strip 1 (Left)
-        renderCell(img, 0, r);
-        // Strip 2 (Right)
-        renderCell(img, 1, r);
+        for (let c = 0; c < columns; c++) {
+          if (imgIdx >= photoCount) continue;
+          const img = loadedImages[imgIdx % loadedImages.length];
+          renderCell(img, c, r);
+          imgIdx++;
+        }
       }
 
       // Draw middle cut guide line
@@ -203,6 +343,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
       let imgIdx = 0;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < columns; c++) {
+          if (imgIdx >= photoCount) continue;
           const img = loadedImages[imgIdx % loadedImages.length];
           renderCell(img, c, r);
           imgIdx++;
@@ -284,9 +425,10 @@ const CollageCanvas = forwardRef(function CollageCanvas(
     setActiveStickerId(null);
   };
 
-  const isDouble = layout.gridConfig.isDoubleStrip;
-  const columns = layout.gridConfig.columns;
-  const rows = layout.gridConfig.rows;
+  const adaptiveGrid = getAdaptiveGrid(layout, photoCount);
+  const isDouble = Boolean(layout.gridConfig.isDoubleStrip);
+  const columns = adaptiveGrid.columns;
+  const rows = adaptiveGrid.rows;
 
   return (
     <div
@@ -300,13 +442,50 @@ const CollageCanvas = forwardRef(function CollageCanvas(
         aspectRatio: layout.aspectRatio,
         backgroundColor: frameSettings.customColor || '#ffffff',
         backgroundImage: frameSettings.gradient || 'none',
-        padding: `${frameSettings.padding || 16}px`,
+        padding: customFrame ? '0' : `${frameSettings.padding || 16}px`,
         maxWidth: '100%',
-        width: layout.id === 'strip-4' || layout.id === 'strip-3' ? '280px' : '380px',
+        width: customFrame ? '280px' : (layout.id === 'strip-4' || layout.id === 'strip-3' ? '280px' : '380px'),
       }}
     >
+      {customFrame && (
+        <>
+          {getCustomFrameSlots(customFrame, photoCount).map((slot, index) => {
+            const photo = photos.length > 0 ? photos[index % photos.length] : null;
+            const activeFilter = getFilterById(selectedFilterId || photo?.filterId || 'normal');
+            return (
+              <div
+                key={`custom-slot-${index}`}
+                className="absolute overflow-hidden"
+                style={{
+                  left: `${((slot.x - 3) / customFrame.canvasWidth) * 100}%`,
+                  top: `${((slot.y - 3) / customFrame.canvasHeight) * 100}%`,
+                  width: `${((slot.w + 6) / customFrame.canvasWidth) * 100}%`,
+                  height: `${((slot.h + 6) / customFrame.canvasHeight) * 100}%`,
+                }}
+              >
+                {photo ? (
+                  <img
+                    src={photo.rawDataUrl || photo.dataUrl}
+                    alt={`Booth Shot ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    style={{ filter: activeFilter.cssFilter }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-300/30" />
+                )}
+              </div>
+            );
+          })}
+          <img
+            src={customFrame.imageUrl}
+            alt={layout.name}
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-20"
+          />
+        </>
+      )}
+
       {/* Decorative Dots Pattern */}
-      {frameSettings.pattern === 'dots' && (
+      {!customFrame && frameSettings.pattern === 'dots' && (
         <div
           className="absolute inset-0 pointer-events-none opacity-20"
           style={{
@@ -317,6 +496,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
       )}
 
       {/* Main Photo Grid */}
+      {!customFrame && (
       <div
         className="w-full h-full min-h-0 flex flex-col justify-between"
         style={{
@@ -331,10 +511,9 @@ const CollageCanvas = forwardRef(function CollageCanvas(
             gap: `${frameSettings.borderWidth || 12}px`,
           }}
         >
-          {Array.from({ length: columns * rows }).map((_, index) => {
-            const rowIndex = Math.floor(index / columns);
+          {Array.from({ length: photoCount }).map((_, index) => {
             const isRightCol = isDouble && index % columns === 1;
-            const photoIndex = (isDouble ? rowIndex : index) % (photos.length || 1);
+            const photoIndex = index % (photos.length || 1);
             const photo = photos[photoIndex];
             const activeFilter = getFilterById(selectedFilterId || photo?.filterId || 'normal');
             const videoSrc = isRightCol ? (photo?.videoUrlCopy || photo?.videoUrl) : photo?.videoUrl;
@@ -431,6 +610,7 @@ const CollageCanvas = forwardRef(function CollageCanvas(
           )}
         </div>
       </div>
+      )}
 
       {/* Stickers Overlay */}
       {stickers.map((s) => (

@@ -80,7 +80,7 @@ export default function ShareModal({
     }
   };
 
-  // Bundle everything (Collage + Raw Photos + 5s Video Clips) into a ZIP file
+  // Bundle the collage, raw photos, and video clips into a ZIP file.
   const handleDownloadAllZip = async () => {
     if (!session) return;
     setIsZipping(true);

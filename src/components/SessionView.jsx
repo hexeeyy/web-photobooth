@@ -80,7 +80,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
       try {
         await navigator.share({
           title: session?.watermarkSettings?.title || 'Photobooth Strip',
-          text: 'Check out our photobooth pictures & 5s clips!',
+          text: 'Check out our photobooth pictures & 5s video clips!',
           url: window.location.href,
         });
       } catch (e) {}
@@ -121,7 +121,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
     <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col pb-12">
       
       {/* Top Banner */}
-      <div className="no-print px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-30">
+      <div className="no-print px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-30">
         <button
           onClick={onOpenBooth}
           className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 flex items-center gap-1.5"
@@ -141,7 +141,8 @@ export default function SessionView({ sessionId, onOpenBooth }) {
         </button>
       </div>
 
-      <div className="max-w-md w-full mx-auto px-4 pt-6 flex flex-col items-center">
+      <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 grid grid-cols-1 lg:grid-cols-2 lg:items-start lg:gap-10">
+        <div className="flex flex-col items-center lg:sticky lg:top-24">
         
         {/* Title Header */}
         <div className="text-center mb-4">
@@ -153,7 +154,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
           </p>
         </div>
 
-        {/* Live 5s Motion Playback Button */}
+        {/* Live Motion Playback Button */}
         {session.photos && session.photos.some((p) => p.videoBlob || p.videoUrl) && (
           <button
             onClick={() => setIsPlayingLiveClips(!isPlayingLiveClips)}
@@ -164,7 +165,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
             }`}
           >
             <Film size={15} />
-            {isPlayingLiveClips ? 'Live 5s Motion ON' : 'Play 5s Motion on Strip'}
+            {isPlayingLiveClips ? 'Live Motion ON' : 'Play Motion on Strip'}
           </button>
         )}
 
@@ -174,6 +175,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
             <div className="rounded-xl overflow-hidden shadow-2xl">
               <CollageCanvas
                 layoutId={session.layoutId || 'strip-4'}
+                photoCount={session.photoCount || session.photos?.length}
                 photos={session.photos || []}
                 selectedFilterId={session.selectedFilterId || 'normal'}
                 frameSettings={session.frameSettings}
@@ -193,7 +195,9 @@ export default function SessionView({ sessionId, onOpenBooth }) {
             </div>
           )}
         </div>
+        </div>
 
+        <div className="w-full flex flex-col items-center lg:pt-2">
         {/* Quick Action Buttons */}
         <div className="no-print w-full grid grid-cols-2 gap-3 mb-6">
           <button
@@ -228,7 +232,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
           </p>
         )}
 
-        {/* 5-Second Video Clips Gallery */}
+        {/* Video Clips Gallery */}
         {session.photos && session.photos.length > 0 && (
           <div className="no-print w-full mb-6">
             <VideoClipsGallery photos={session.photos} selectedFilterId={session.selectedFilterId} />
@@ -244,6 +248,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
             <Camera size={16} />
             Take New Photos in Booth
           </button>
+        </div>
         </div>
 
       </div>

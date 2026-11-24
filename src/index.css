@@ -13,8 +13,8 @@
     color: #334155;
     font-family: "Montserrat Variable", "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
-    user-select: none;
-    -webkit-user-select: none;
+    min-width: 320px;
+    min-height: 100%;
   }
 }
 
@@ -188,10 +188,19 @@
   display: none;
 }
 
+.collage-preview {
+  height: min(72vh, 760px);
+  width: auto !important;
+}
+
+.camera-viewfinder {
+  min-height: clamp(12rem, 35vh, 28rem);
+}
+
 @media (max-width: 639px) {
   .collage-preview {
-    width: auto !important;
     height: min(48vh, 440px);
+    max-height: calc(100svh - 12rem);
   }
 }
 

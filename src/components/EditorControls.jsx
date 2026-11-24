@@ -6,6 +6,8 @@ import { LayoutGrid, Palette, Type, Smile, Sparkles, Sliders, Check } from 'luci
 
 export default function EditorControls({
   layoutId,
+  photoCount,
+  onPhotoCountChange,
   onLayoutChange,
   frameSettings,
   onFrameSettingsChange,
@@ -20,13 +22,13 @@ export default function EditorControls({
   const [activeTab, setActiveTab] = useState('layout'); // 'layout', 'frame', 'watermark', 'stickers', 'filter'
 
   return (
-    <div className="w-full bg-zinc-900 border-t border-white/10 flex flex-col max-h-[40vh] sm:max-h-none overflow-hidden select-none">
+    <div className="w-full bg-zinc-900 border-t border-white/10 flex flex-col max-h-[40vh] sm:max-h-none overflow-hidden select-none lg:rounded-2xl lg:border lg:border-white/10 lg:max-h-[calc(100dvh-7rem)]">
       
       {/* Navigation Tabs */}
-      <div className="flex items-center justify-around border-b border-white/10 px-2 py-2 overflow-x-auto no-scrollbar bg-black/40">
+      <div className="flex items-center justify-start sm:justify-around gap-1 border-b border-white/10 px-2 py-2 overflow-x-auto no-scrollbar bg-black/40">
         <button
           onClick={() => setActiveTab('layout')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'layout'
               ? 'bg-rose-600 text-white shadow-md'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -38,7 +40,7 @@ export default function EditorControls({
 
         <button
           onClick={() => setActiveTab('frame')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'frame'
               ? 'bg-rose-600 text-white shadow-md'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -50,7 +52,7 @@ export default function EditorControls({
 
         <button
           onClick={() => setActiveTab('watermark')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'watermark'
               ? 'bg-rose-600 text-white shadow-md'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -62,7 +64,7 @@ export default function EditorControls({
 
         <button
           onClick={() => setActiveTab('stickers')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'stickers'
               ? 'bg-rose-600 text-white shadow-md'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -74,7 +76,7 @@ export default function EditorControls({
 
         <button
           onClick={() => setActiveTab('filter')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'filter'
               ? 'bg-rose-600 text-white shadow-md'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -86,11 +88,25 @@ export default function EditorControls({
       </div>
 
       {/* Tab Panels */}
-      <div className="p-4 overflow-y-auto max-h-56 no-scrollbar">
+      <div className="p-3 sm:p-4 overflow-y-auto max-h-[35vh] sm:max-h-[42vh] no-scrollbar lg:max-h-[calc(100dvh-12rem)]">
 
         {/* 1. LAYOUT TAB */}
         {activeTab === 'layout' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-semibold text-white/80">Number of photos</span>
+              <select
+                value={photoCount}
+                onChange={(e) => onPhotoCountChange(parseInt(e.target.value, 10))}
+                className="px-3 py-1.5 bg-black/60 border border-white/20 rounded-xl text-xs text-white"
+                aria-label="Number of photos"
+              >
+                {Array.from({ length: 12 }, (_, index) => index + 1).map((count) => (
+                  <option key={count} value={count}>{count}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {LAYOUTS.map((item) => {
               const isActive = layoutId === item.id;
               return (
@@ -114,6 +130,7 @@ export default function EditorControls({
                 </button>
               );
             })}
+            </div>
           </div>
         )}
 
@@ -349,7 +366,7 @@ export default function EditorControls({
               )}
             </div>
 
-            <div className="grid grid-cols-8 gap-2">
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 sm:gap-2">
               {STICKERS.map((s) => (
                 <button
                   key={s.id}

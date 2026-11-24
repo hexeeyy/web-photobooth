@@ -1,4 +1,4 @@
-// Generate rich demo photos and 5s video clips for testing or when camera is restricted
+// Generate rich demo photos and short video clips for testing or when camera is restricted
 export async function generateDemoShots(count = 4) {
   const poses = [
     { title: '✌️ Peace & Smiles', gradient: ['#f43f5e', '#ec4899'], emoji: '✌️', subtitle: 'Shot 1' },
@@ -56,7 +56,7 @@ export async function generateDemoShots(count = 4) {
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-    // Generate 5-second video clip using Canvas Stream & MediaRecorder
+    // Generate a short synthetic video clip using Canvas Stream & MediaRecorder
     let videoBlob = null;
     let videoUrl = null;
     let videoUrlCopy = null;
@@ -135,6 +135,7 @@ export async function generateDemoShots(count = 4) {
       videoBlob,
       videoUrl,
       videoUrlCopy: videoUrlCopy || videoUrl,
+      videoDurationSeconds: videoBlob ? 2 : null,
       filterId: 'normal',
       timestamp: Date.now(),
     });

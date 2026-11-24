@@ -21,6 +21,7 @@ export default function App() {
   const [layoutId, setLayoutId] = useState('strip-4');
   const [selectedFilterId, setSelectedFilterId] = useState('normal');
   const [capturedPhotos, setCapturedPhotos] = useState([]);
+  const [photoCount, setPhotoCount] = useState(4);
   
   // Design & Watermark Customization
   const [frameSettings, setFrameSettings] = useState({
@@ -68,8 +69,6 @@ export default function App() {
     }
   }, []);
 
-  // Active layout definition
-  const currentLayout = getLayoutById(layoutId);
   const hasMotionClips = capturedPhotos.some((photo) => photo.videoUrl || photo.videoUrlCopy);
 
   // When photos are captured from CameraView
@@ -118,6 +117,7 @@ export default function App() {
     stickers,
     capturedPhotos,
     selectedFilterId,
+    photoCount,
     updateCollageDataUrl,
   ]);
 
@@ -131,6 +131,7 @@ export default function App() {
         id: currentSessionId,
         createdAt: Date.now(),
         layoutId,
+        photoCount,
         selectedFilterId,
         frameSettings,
         watermarkSettings,
@@ -155,6 +156,7 @@ export default function App() {
     frameSettings,
     watermarkSettings,
     stickers,
+    photoCount,
     collageDataUrl,
   ]);
 
@@ -175,6 +177,7 @@ export default function App() {
     watermarkSettings,
     stickers,
     selectedFilterId,
+    photoCount,
     handleSaveCurrentSession,
   ]);
 
@@ -247,6 +250,7 @@ export default function App() {
       const rehydrated = rehydrateSession(selectedSession);
       setCurrentSessionId(rehydrated.id);
       setLayoutId(rehydrated.layoutId || 'strip-4');
+      setPhotoCount(rehydrated.photoCount || getLayoutById(rehydrated.layoutId || 'strip-4').photoCount);
       setSelectedFilterId(rehydrated.selectedFilterId || 'normal');
       setFrameSettings(rehydrated.frameSettings || frameSettings);
       setWatermarkSettings(rehydrated.watermarkSettings || watermarkSettings);
@@ -336,9 +340,11 @@ export default function App() {
       
       {/* 1. CAMERA VIEW */}
       {currentView === 'booth' && (
-        <div className="w-full h-full min-h-[100dvh] flex flex-col justify-between">
+        <div className="w-full min-h-[100svh] min-h-[100dvh] flex flex-col">
           <CameraView
-            targetCount={currentLayout.photoCount}
+            targetCount={photoCount}
+            photoCount={photoCount}
+            onPhotoCountChange={setPhotoCount}
             selectedFilterId={selectedFilterId}
             onFilterChange={setSelectedFilterId}
             onCaptureComplete={handleCaptureComplete}
@@ -353,10 +359,10 @@ export default function App() {
 
       {/* 2. COLLAGE EDITOR & DESIGN VIEW */}
       {currentView === 'editor' && (
-        <div className="w-full min-h-screen flex flex-col justify-between">
+        <div className="w-full min-h-screen flex flex-col lg:h-screen lg:min-h-0 lg:grid lg:grid-cols-[minmax(0,42fr)_minmax(0,58fr)] lg:grid-rows-[auto_minmax(0,1fr)]">
           
           {/* Top Editor Bar */}
-          <div className="no-print px-4 py-2.5 bg-zinc-900/95 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-30">
+          <div className="no-print px-4 py-2.5 bg-zinc-900/95 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-30 lg:col-span-2 lg:col-start-1 lg:row-start-1">
             <button
               onClick={() => setCurrentView('booth')}
               className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 flex items-center gap-1.5 active:scale-95 text-white/80"
@@ -376,8 +382,8 @@ export default function App() {
           </div>
 
           {/* Center Stage: Interactive Collage Canvas */}
-          <div className="no-print flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
-            <div className="max-w-md w-full flex flex-col items-center">
+          <div className="no-print flex-1 min-h-0 flex flex-col items-center justify-center p-4 overflow-y-auto lg:col-start-1 lg:row-start-2 lg:px-6 lg:py-4">
+            <div className="max-w-md w-full flex flex-col items-center lg:max-w-[520px]">
               <div className="w-full grid grid-cols-2 gap-2 mb-4 p-1 rounded-2xl bg-white/5 border border-white/10">
                 <button
                   type="button"
@@ -421,6 +427,7 @@ export default function App() {
               <CollageCanvas
                 ref={collageCanvasRef}
                 layoutId={layoutId}
+                photoCount={photoCount}
                 photos={capturedPhotos}
                 selectedFilterId={selectedFilterId}
                 frameSettings={frameSettings}
@@ -467,10 +474,14 @@ export default function App() {
           </div>
 
           {/* Bottom Customization Controls Bar */}
-          <div className="no-print">
+          <div className="no-print lg:col-start-2 lg:row-start-2 lg:min-h-0 lg:flex lg:items-center lg:justify-center lg:p-6">
             <EditorControls
               layoutId={layoutId}
-              onLayoutChange={setLayoutId}
+              photoCount={photoCount}
+              onPhotoCountChange={setPhotoCount}
+              onLayoutChange={(nextLayoutId) => {
+                setLayoutId(nextLayoutId);
+              }}
               frameSettings={frameSettings}
               onFrameSettingsChange={setFrameSettings}
               watermarkSettings={watermarkSettings}

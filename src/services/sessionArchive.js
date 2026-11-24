@@ -4,11 +4,16 @@ function getVideoExtension(photo) {
   return photo.videoBlob?.type.includes('mp4') ? 'mp4' : 'webm';
 }
 
+function getVideoDurationSeconds(photo) {
+  return photo.videoDurationSeconds || 5;
+}
+
 function getSessionMetadata(session) {
   return {
     id: session.id,
     createdAt: session.createdAt,
     layoutId: session.layoutId,
+    photoCount: session.photoCount,
     selectedFilterId: session.selectedFilterId,
     frameSettings: session.frameSettings,
     watermarkSettings: session.watermarkSettings,
@@ -22,6 +27,7 @@ function getSessionMetadata(session) {
       hasVideo: Boolean(photo.videoBlob),
       videoType: photo.videoBlob?.type || '',
       videoExtension: getVideoExtension(photo),
+      videoDurationSeconds: getVideoDurationSeconds(photo),
     })),
   };
 }
@@ -42,7 +48,8 @@ export async function createSessionArchive(session) {
     await addImage(zip, `photos/photo-${index + 1}.jpg`, photo.dataUrl);
     await addImage(zip, `photos/raw-photo-${index + 1}.jpg`, photo.rawDataUrl);
     if (photo.videoBlob) {
-      zip.file(`videos/clip-5s-shot-${index + 1}.${getVideoExtension(photo)}`, photo.videoBlob);
+      const duration = getVideoDurationSeconds(photo);
+      zip.file(`videos/clip-${duration}s-shot-${index + 1}.${getVideoExtension(photo)}`, photo.videoBlob);
     }
   }
 
@@ -69,7 +76,9 @@ export async function hydratePublishedSession(manifest) {
   const photos = await Promise.all((metadata.photos || []).map(async (photo, index) => {
     const dataFile = zip.file(`photos/photo-${index + 1}.jpg`);
     const rawFile = zip.file(`photos/raw-photo-${index + 1}.jpg`);
-    const videoFile = zip.file(`videos/clip-5s-shot-${index + 1}.${photo.videoExtension}`);
+    const duration = photo.videoDurationSeconds || 5;
+    const videoFile = zip.file(`videos/clip-${duration}s-shot-${index + 1}.${photo.videoExtension}`)
+      || zip.file(`videos/clip-5s-shot-${index + 1}.${photo.videoExtension}`);
     const dataUrl = dataFile
       ? `data:image/jpeg;base64,${await dataFile.async('base64')}`
       : null;
@@ -83,6 +92,7 @@ export async function hydratePublishedSession(manifest) {
 
     return {
       ...photo,
+      videoDurationSeconds: duration,
       dataUrl,
       rawDataUrl,
       videoBlob,

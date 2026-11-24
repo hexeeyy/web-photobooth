@@ -90,8 +90,8 @@ export default function CuratedGallery({
     <div className="glass-theme w-full min-h-screen bg-zinc-950 text-white flex flex-col">
       
       {/* Top Header */}
-      <div className="sticky top-0 z-20 px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-20 px-3 sm:px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={onBackToBooth}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/80"
@@ -99,7 +99,7 @@ export default function CuratedGallery({
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-1.5">
+            <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
               <Sparkles size={16} className="text-rose-500" />
               Curated Event Gallery
             </h2>
@@ -110,7 +110,7 @@ export default function CuratedGallery({
         {sessions.length > 0 && (
           <button
             onClick={() => setIsSlideshowActive(true)}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95"
+            className="shrink-0 px-2 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:opacity-90 text-white text-[10px] sm:text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95"
           >
             <Play size={14} />
             Live Slideshow
@@ -119,10 +119,10 @@ export default function CuratedGallery({
       </div>
 
       {/* Filter Tabs */}
-      <div className="px-4 py-2.5 flex items-center gap-2 border-b border-white/5 bg-zinc-900/40">
+      <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-zinc-900/40">
         <button
           onClick={() => setFilterMode('all')}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+          className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
             filterMode === 'all'
               ? 'bg-white text-black'
               : 'bg-white/10 text-white/60 hover:text-white'
@@ -133,7 +133,7 @@ export default function CuratedGallery({
 
         <button
           onClick={() => setFilterMode('favorites')}
-          className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
+          className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 whitespace-nowrap transition-all ${
             filterMode === 'favorites'
               ? 'bg-amber-400 text-black'
               : 'bg-white/10 text-white/60 hover:text-white'
@@ -151,7 +151,7 @@ export default function CuratedGallery({
             <ImageIcon size={48} className="mb-3 opacity-30 text-rose-400" />
             <h3 className="text-sm font-semibold text-white/80">No photobooth strips yet</h3>
             <p className="text-xs text-white/50 max-w-xs mt-1">
-              Snap some photos with 5s clips in the booth to populate this curated gallery!
+              Capture photos with 5-second video clips in the booth to populate this curated gallery!
             </p>
             <button
               onClick={onBackToBooth}
@@ -190,7 +190,7 @@ export default function CuratedGallery({
                   {/* Video Clip Count Badge */}
                   {session.photos && session.photos.some((p) => p.hasVideo || p.videoBlob || p.videoUrl) && (
                     <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-md bg-rose-600/90 text-[10px] font-bold text-white shadow">
-                      ▶ 5s Clips
+                      ▶ Video Clips
                     </div>
                   )}
                 </div>

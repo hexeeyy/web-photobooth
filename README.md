@@ -8,14 +8,14 @@ A modern, responsive, mobile-first Web Photobooth app built with React, Tailwind
 
 ### 📱 1. Mobile-First Camera Experience
 - **Front & Back Camera Switching**: Seamlessly toggle between front selfie camera and back ultra-wide/main camera.
-- **Configurable Countdown Timer**: Choose between 3s, 5s, or 10s countdowns with audio beeps and visual pulse rings.
+- **5-Second Capture Countdown**: Each photo and its video clip use a 5-second countdown with audio beeps and a visual progress ring.
 - **Synthesized Audio & Flash Feedback**: Realistic mechanical camera shutter sound, countdown ticks, celebration chimes (powered by Web Audio API without external audio files), and screen flash.
 - **One-Touch Sequence Mode**: Automatically records all required shots with posing intervals between shots.
 
 ### 🎥 2. 5-Second Video Clip on Every Photo Taken
-- **Live Motion Capture**: Each photo automatically records at least **5 seconds of live video** (`MediaRecorder` API).
-- **Interactive Motion Playback**: Toggle "Play 5s Motion" to watch your photostrip come alive with animated motion (Harry Potter / Apple Live Photo style!).
-- **Individual & Batch Clip Downloads**: Download each 5-second video clip separately or bundle all raw clips and collages into a single ZIP file (`JSZip`).
+- **Live Motion Capture**: Each photo automatically records **5 seconds of live video** (`MediaRecorder` API).
+- **Interactive Motion Playback**: Toggle motion playback to watch your photostrip come alive with animated motion (Harry Potter / Apple Live Photo style!).
+- **Shareable Videos**: Shared session links include motion playback; guests can download each video clip or bundle all clips and collages into a single ZIP file (`JSZip`).
 
 ### 🎨 3. Custom Collages & Layout Sizes
 - **Classic 4-Cut Strip (2" x 6")**: Iconic Korean & Japanese vertical 4-cut photostrip with bottom brand stamp.

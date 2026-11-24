@@ -1,5 +1,32 @@
 export const LAYOUTS = [
   {
+    id: 'christmas-2026',
+    name: 'Christmas 2026 Frame',
+    category: 'Seasonal Frame',
+    photoCount: 3,
+    aspectRatio: '863 / 1918',
+    width: 863,
+    height: 1918,
+    printSize: 'Custom frame',
+    description: 'Festive 2026 frame with three vertical photo slots.',
+    badge: 'New',
+    customFrame: {
+      imageUrl: '/collage_frame_christmas_2026.png',
+      canvasWidth: 863,
+      canvasHeight: 1918,
+      slots: [
+        { x: 143, y: 148, w: 576, h: 338 },
+        { x: 143, y: 540, w: 576, h: 339 },
+        { x: 143, y: 934, w: 576, h: 339 },
+      ],
+    },
+    gridConfig: {
+      columns: 1,
+      rows: 3,
+      watermarkPosition: 'none',
+    }
+  },
+  {
     id: 'strip-4',
     name: 'Classic 4-Cut Strip',
     category: 'Photostrip (2" x 6")',
@@ -106,4 +133,27 @@ export const LAYOUTS = [
 
 export function getLayoutById(id) {
   return LAYOUTS.find((l) => l.id === id) || LAYOUTS[0];
+}
+
+export function getAdaptiveGrid(layout, photoCount) {
+  const count = Math.max(1, Math.min(12, Number(photoCount) || layout.photoCount));
+  if (layout.customFrame) {
+    return { columns: 1, rows: count, customSlotCount: count };
+  }
+  if (layout.id === 'strip-4' || layout.id === 'strip-3') {
+    return { columns: 1, rows: count };
+  }
+  if (layout.id === 'polaroid') {
+    if (count === 1) return { columns: 1, rows: 1 };
+    if (count <= 4) return { columns: 2, rows: Math.ceil(count / 2) };
+    return { columns: 3, rows: Math.ceil(count / 3) };
+  }
+  if (layout.id === 'postcard-6') {
+    return { columns: 2, rows: Math.ceil(count / 2) };
+  }
+  if (layout.id === 'double-strip-4') {
+    return { columns: 2, rows: Math.ceil(count / 2), isDoubleStrip: true };
+  }
+  const columns = Math.ceil(Math.sqrt(count));
+  return { columns, rows: Math.ceil(count / columns) };
 }

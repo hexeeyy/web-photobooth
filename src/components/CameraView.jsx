@@ -4,8 +4,12 @@ import { playCountdownBeep, playShutterSound, initAudio } from '../services/audi
 import { FILTERS, getFilterById } from '../constants/filters';
 import { generateDemoShots } from '../services/demoShots';
 
+const VIDEO_CLIP_DURATION_SECONDS = 5;
+
 export default function CameraView({
   targetCount = 4,
+  photoCount,
+  onPhotoCountChange,
   selectedFilterId = 'normal',
   onFilterChange,
   onCaptureComplete,
@@ -21,8 +25,6 @@ export default function CameraView({
   const [hasPermission, setHasPermission] = useState(null);
   const [permissionError, setPermissionError] = useState('');
   
-  // Timer settings
-  const [timerDuration, setTimerDuration] = useState(5); // 5 seconds (at least 5s video clip)
   const [isCapturingSequence, setIsCapturingSequence] = useState(false);
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
   const [countdown, setCountdown] = useState(null);
@@ -138,7 +140,7 @@ export default function CameraView({
     return { dataUrl: filteredDataUrl, rawDataUrl };
   };
 
-  // Trigger Single Shot Process (records 5s video clip and takes still photo)
+  // Trigger Single Shot Process (records a 5-second video clip and takes still photo)
   const recordShotProcess = (shotNum) => {
     return new Promise((resolve) => {
       const stream = streamRef.current;
@@ -165,8 +167,8 @@ export default function CameraView({
         console.warn('No video format is supported for both recording and playback.');
       }
 
-      // 5-second duration with live countdown & progress
-      const totalSeconds = Math.max(5, timerDuration);
+      // Record each shot for 5 seconds before taking its still photo.
+      const totalSeconds = VIDEO_CLIP_DURATION_SECONDS;
       let remaining = totalSeconds;
       setCountdown(remaining);
       setRecordingProgress(0);
@@ -213,6 +215,7 @@ export default function CameraView({
                 videoBlob: videoBlob,
                 videoUrl: videoUrl,
                 videoUrlCopy: videoUrlCopy,
+                videoDurationSeconds: VIDEO_CLIP_DURATION_SECONDS,
                 filterId: selectedFilterId,
                 timestamp: Date.now()
               });
@@ -229,6 +232,7 @@ export default function CameraView({
               rawDataUrl: rawDataUrl || photoDataUrl,
               videoBlob: null,
               videoUrl: null,
+              videoDurationSeconds: VIDEO_CLIP_DURATION_SECONDS,
               filterId: selectedFilterId,
               timestamp: Date.now()
             });
@@ -308,7 +312,7 @@ export default function CameraView({
   const currentFilter = getFilterById(selectedFilterId);
 
   return (
-    <div className="glass-theme relative w-full h-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden select-none">
+    <div className="camera-view glass-theme relative w-full h-[100svh] h-[100dvh] min-h-[100svh] min-h-[100dvh] bg-black text-white flex flex-col overflow-x-hidden overflow-y-auto select-none">
       
       {/* Flash overlay */}
       {isFlashing && (
@@ -316,7 +320,7 @@ export default function CameraView({
       )}
 
       {/* Top Header Bar */}
-      <div className="relative z-20 flex items-center justify-between gap-1 px-2 py-2 sm:gap-2 sm:px-4 sm:py-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+      <div className="relative z-20 shrink-0 flex items-center justify-between gap-1 px-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 sm:gap-2 sm:px-4 sm:pb-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
         <button
           onClick={onCancel}
           className="shrink-0 text-[10px] sm:text-xs uppercase tracking-wider font-semibold px-2 sm:px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-95"
@@ -346,7 +350,7 @@ export default function CameraView({
           <button
             onClick={handleLoadDemo}
             className="px-2 py-1 sm:px-2.5 rounded-full bg-rose-600/80 hover:bg-rose-500 backdrop-blur-md text-xs font-bold flex items-center gap-1 active:scale-95"
-            title="Load Demo Photos & 5s Clips"
+            title="Load Demo Photos & Clips"
           >
             <Wand2 size={13} />
             <span className="hidden sm:inline text-[10px]">Demo</span>
@@ -369,7 +373,7 @@ export default function CameraView({
       </div>
 
       {/* Main Viewfinder */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden w-full">
+      <div className="camera-viewfinder relative flex-1 min-h-0 flex items-center justify-center overflow-hidden w-full">
         {permissionError ? (
           <div className="text-center p-6 max-w-sm bg-zinc-900/90 border border-white/10 rounded-2xl shadow-2xl">
             <p className="text-white/80 font-medium mb-4 text-xs">{permissionError}</p>
@@ -385,19 +389,19 @@ export default function CameraView({
                 className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl font-bold text-xs active:scale-95 text-white flex items-center justify-center gap-1.5"
               >
                 <Wand2 size={14} />
-                Try Demo Shots & 5s Clips
+                Try Demo Photos & Clips
               </button>
             </div>
           </div>
         ) : (
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-full h-full min-h-0 flex items-center justify-center">
             {/* Live Camera Stream */}
             <video
               ref={videoRef}
               playsInline
               autoPlay
               muted
-              className={`w-full h-full object-cover transition-all duration-200 ${
+              className={`w-full h-full min-h-0 min-w-0 object-cover transition-all duration-200 ${
                 facingMode === 'user' ? 'scale-x-[-1]' : ''
               }`}
               style={{ filter: currentFilter.cssFilter }}
@@ -459,7 +463,7 @@ export default function CameraView({
                 </span>
                 {shot.videoUrl && (
                   <span className="absolute top-0.5 left-0.5 p-0.5 bg-rose-600 rounded text-[8px] leading-none">
-                    ▶ 5s
+                    ▶ {shot.videoDurationSeconds || 5}s
                   </span>
                 )}
               </div>
@@ -489,7 +493,23 @@ export default function CameraView({
       )}
 
       {/* Filter Selector Carousel */}
-      <div className="relative z-20 px-4 py-2 bg-gradient-to-t from-black via-black/95 to-transparent">
+      <div className="relative z-20 shrink-0 px-3 sm:px-4 py-2 bg-gradient-to-t from-black via-black/95 to-transparent">
+        <div className="flex items-center justify-center mb-1.5">
+          <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] text-white/80">
+            <span>Photos</span>
+            <select
+              value={photoCount || targetCount}
+              onChange={(e) => onPhotoCountChange?.(parseInt(e.target.value, 10))}
+              disabled={isCapturingSequence || capturedShots.length > 0}
+              className="bg-zinc-900 border border-white/20 rounded-md px-2 py-0.5 text-white text-xs disabled:opacity-50"
+              aria-label="Number of photos"
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((count) => (
+                <option key={count} value={count}>{count}</option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           {FILTERS.map((f) => {
             const isActive = selectedFilterId === f.id;
@@ -519,19 +539,14 @@ export default function CameraView({
       </div>
 
       {/* Bottom Main Shutter Controls */}
-      <div className="relative z-20 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-6 bg-black flex items-center justify-around gap-4 border-t border-white/5">
+      <div className="relative z-20 shrink-0 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-6 bg-black flex items-center justify-around gap-4 border-t border-white/5">
         
-        {/* Timer Duration Toggle */}
-        <button
-          onClick={() => setTimerDuration(timerDuration === 3 ? 5 : timerDuration === 5 ? 10 : 3)}
-          disabled={isCapturingSequence || isRecordingClip}
-          className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white disabled:opacity-30 active:scale-95"
-        >
+        <div className="flex flex-col items-center gap-0.5 text-white/70">
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10 border border-white/10">
-            {timerDuration}s
+            5s
           </span>
-          <span className="text-[10px] text-white/50">Timer</span>
-        </button>
+          <span className="text-[10px] text-white/50">Video</span>
+        </div>
 
         {/* Big Shutter / Sequence Trigger Button */}
         <div className="relative flex items-center justify-center">
@@ -572,7 +587,7 @@ export default function CameraView({
           <div className="relative max-w-sm w-full bg-zinc-900 rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
             <div className="p-3 bg-zinc-800 flex items-center justify-between border-b border-white/10">
               <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-rose-400">
-                <Video size={14} /> 5-Second Motion Clip
+                <Video size={14} /> Motion Video Clip
               </span>
               <button
                 onClick={() => setPreviewClipUrl(null)}

@@ -36,8 +36,8 @@ export default function VideoClipsGallery({ photos = [], selectedFilterId = 'nor
             <Film size={16} />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">5-Second Motion Video Clips</h4>
-            <p className="text-[11px] text-white/50">Each shot includes a live 5s video memory</p>
+            <h4 className="text-sm font-bold text-white">Motion Video Clips</h4>
+            <p className="text-[11px] text-white/50">Each shot includes a shareable video memory</p>
           </div>
         </div>
         <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-mono">
@@ -48,6 +48,7 @@ export default function VideoClipsGallery({ photos = [], selectedFilterId = 'nor
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {videoPhotos.map((photo, idx) => {
           const isPlaying = playingVideoId === photo.id;
+          const duration = photo.videoDurationSeconds || 5;
           return (
             <div
               key={photo.id || idx}
@@ -84,7 +85,7 @@ export default function VideoClipsGallery({ photos = [], selectedFilterId = 'nor
 
               {/* Shot Tag */}
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white">
-                Shot #{idx + 1} • 5s
+                Shot #{idx + 1} • {duration}s
               </div>
 
               {/* Bottom Download Bar */}
@@ -92,7 +93,7 @@ export default function VideoClipsGallery({ photos = [], selectedFilterId = 'nor
                 <button
                   onClick={() => handleDownloadClip(photo, idx)}
                   className="p-1.5 bg-white/20 hover:bg-rose-600 text-white rounded-lg text-xs backdrop-blur-md transition-all active:scale-95"
-                  title="Download 5s Video Clip"
+                  title={`Download ${duration}s Video Clip`}
                 >
                   <Download size={14} />
                 </button>
