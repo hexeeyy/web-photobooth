@@ -504,8 +504,13 @@ export default function App() {
         session={{
           ...(shareSession || {
             id: currentSessionId,
+            layoutId,
+            photoCount,
+            selectedFilterId,
+            frameSettings,
             photos: capturedPhotos,
             watermarkSettings,
+            stickers,
           }),
         }}
         collageDataUrl={collageDataUrl}

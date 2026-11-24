@@ -10,6 +10,7 @@ export default function SessionView({ sessionId, onOpenBooth }) {
   const [error, setError] = useState('');
   const [downloadError, setDownloadError] = useState('');
   const [isPlayingLiveClips, setIsPlayingLiveClips] = useState(false);
+  const [isExportingVideo, setIsExportingVideo] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -68,6 +69,21 @@ export default function SessionView({ sessionId, onOpenBooth }) {
     } catch (err) {
       console.error('Session package download failed:', err);
       setDownloadError('Could not download the full photo and video package. Please try again.');
+    }
+  };
+
+  const handleDownloadVideoCollage = async () => {
+    if (!session || isExportingVideo) return;
+    try {
+      setIsExportingVideo(true);
+      setDownloadError('');
+      const { downloadVideoCollage } = await import('../services/videoCollage');
+      await downloadVideoCollage(session);
+    } catch (err) {
+      console.error('Video collage export failed:', err);
+      setDownloadError(err.message || 'Could not save the video collage. Please try again.');
+    } finally {
+      setIsExportingVideo(false);
     }
   };
 
@@ -216,6 +232,17 @@ export default function SessionView({ sessionId, onOpenBooth }) {
             Print Strip
           </button>
         </div>
+
+        {session.photos?.some((photo) => photo.videoBlob || photo.videoUrl) && (
+          <button
+            onClick={handleDownloadVideoCollage}
+            disabled={isExportingVideo}
+            className="no-print w-full py-3 mb-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
+          >
+            <Film size={16} />
+            {isExportingVideo ? 'Creating video collage...' : 'Save Video Collage'}
+          </button>
+        )}
 
         {session.packageUrl && (
           <button

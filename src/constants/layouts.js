@@ -157,3 +157,50 @@ export function getAdaptiveGrid(layout, photoCount) {
   const columns = Math.ceil(Math.sqrt(count));
   return { columns, rows: Math.ceil(count / columns) };
 }
+
+export function getCustomFrameSlots(customFrame, photoCount) {
+  const count = Math.max(1, Math.min(12, Number(photoCount) || customFrame.slots.length));
+  if (count === 3) return customFrame.slots;
+
+  let columns;
+  let rows;
+
+  if (count === 1) {
+    columns = 1;
+    rows = 1;
+  } else if (count === 2) {
+    columns = 1;
+    rows = 2;
+  } else if (count <= 4) {
+    columns = 2;
+    rows = 2;
+  } else if (count <= 6) {
+    columns = 2;
+    rows = 3;
+  } else if (count <= 9) {
+    columns = 3;
+    rows = 3;
+  } else {
+    columns = 3;
+    rows = 4;
+  }
+
+  const area = { x: 143, y: 148, w: 576, h: 1125 };
+  const gap = 18;
+  const slotWidth = (area.w - gap * (columns - 1)) / columns;
+  const slotHeight = (area.h - gap * (rows - 1)) / rows;
+  const slots = [];
+
+  for (let index = 0; index < count; index++) {
+    const row = Math.floor(index / columns);
+    const column = index % columns;
+    slots.push({
+      x: area.x + column * (slotWidth + gap),
+      y: area.y + row * (slotHeight + gap),
+      w: slotWidth,
+      h: slotHeight,
+    });
+  }
+
+  return slots;
+}

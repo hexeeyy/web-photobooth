@@ -15,7 +15,7 @@ A modern, responsive, mobile-first Web Photobooth app built with React, Tailwind
 ### 🎥 2. 5-Second Video Clip on Every Photo Taken
 - **Live Motion Capture**: Each photo automatically records **5 seconds of live video** (`MediaRecorder` API).
 - **Interactive Motion Playback**: Toggle motion playback to watch your photostrip come alive with animated motion (Harry Potter / Apple Live Photo style!).
-- **Shareable Videos**: Shared session links include motion playback; guests can download each video clip or bundle all clips and collages into a single ZIP file (`JSZip`).
+- **Shareable Videos**: Shared session links include motion playback; guests can save a standalone video collage, download each video clip, or bundle all clips and collages into a single ZIP file (`JSZip`).
 
 ### 🎨 3. Custom Collages & Layout Sizes
 - **Classic 4-Cut Strip (2" x 6")**: Iconic Korean & Japanese vertical 4-cut photostrip with bottom brand stamp.
@@ -46,7 +46,7 @@ A modern, responsive, mobile-first Web Photobooth app built with React, Tailwind
 ### 💾 6. Curated Storage & Instant Shareable Links
 - **High-Capacity IndexedDB Persistence**: Saves full-resolution images, collages, and 5-second video clips locally without browser storage limits.
 - **Vercel-hosted Share Links**: On a Vercel deployment, sessions and their downloadable packages are stored in Vercel Blob, so a QR link can be opened from another device.
-- **Complete Session Download**: Guests can download the photo collage, individual photos, video clips, and a `session.json` metadata export as one ZIP.
+- **Complete Session Download**: Guests can download a standalone video collage or download the photo collage, individual photos, video clips, and a `session.json` metadata export as one ZIP.
 - **Curated Event Gallery**:
   - Star / favorite the best shots for the event.
   - Delete test or unwanted poses.
@@ -88,6 +88,6 @@ This runs the lightweight sync server on port `4000` which persists sessions to 
 2. In the Vercel project, open **Storage → Create Storage → Blob** and create a **Public** Blob store.
 3. Connect the store to the project’s **Production** environment and select **Add a read-write token env var**. The Blob connection must provide `BLOB_READ_WRITE_TOKEN` to the project so the upload function can authorize direct browser uploads. Do not add this secret to a `VITE_` variable or commit it to source control.
 4. Redeploy after connecting the store.
-5. Capture or open a session on the deployed site and select **Share & QR**. The app uploads the collage and a ZIP package to Blob before showing the link. Guests can scan the QR code, view the still or motion collage, and download the complete package.
+5. Capture or open a session on the deployed site and select **Share & QR**. The app uploads the collage and a ZIP package to Blob before showing the link. Guests can scan the QR code, view the still or motion collage, save the video collage separately, and download the complete package.
 
 Vercel Blob holds the shareable session files and small session manifests. Browser IndexedDB remains a local cache; it is not a centralized database or a backup of all booth devices.

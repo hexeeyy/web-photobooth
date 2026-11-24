@@ -13,8 +13,11 @@ export default function ShareModal({
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
+  const [isExportingVideo, setIsExportingVideo] = useState(false);
+  const [videoExportError, setVideoExportError] = useState('');
 
   const shareUrl = session ? getShareableUrl(session.id) : window.location.href;
+  const hasVideo = session?.photos?.some((photo) => photo.videoBlob || photo.videoUrl);
 
   useEffect(() => {
     if (isOpen && shareUrl) {
@@ -106,6 +109,21 @@ export default function ShareModal({
       console.error('ZIP creation failed:', error);
     } finally {
       setIsZipping(false);
+    }
+  };
+
+  const handleDownloadVideoCollage = async () => {
+    if (!session || isExportingVideo) return;
+    setVideoExportError('');
+    setIsExportingVideo(true);
+    try {
+      const { downloadVideoCollage } = await import('../services/videoCollage');
+      await downloadVideoCollage(session);
+    } catch (error) {
+      console.error('Video collage export failed:', error);
+      setVideoExportError(error.message || 'Could not save the video collage. Please try again.');
+    } finally {
+      setIsExportingVideo(false);
     }
   };
 
@@ -205,6 +223,22 @@ export default function ShareModal({
             {isZipping ? 'Zipping...' : 'Zip + Videos'}
           </button>
         </div>
+
+        {hasVideo && (
+          <button
+            onClick={handleDownloadVideoCollage}
+            disabled={isExportingVideo}
+            className="w-full mt-2 py-2.5 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
+          >
+            <Film size={14} />
+            {isExportingVideo ? 'Creating video collage...' : 'Save Video Collage'}
+          </button>
+        )}
+        {videoExportError && (
+          <p role="alert" className="w-full mt-2 text-center text-xs text-red-300">
+            {videoExportError}
+          </p>
+        )}
 
       </div>
     </div>
