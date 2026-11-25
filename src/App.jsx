@@ -55,6 +55,8 @@ export default function App() {
   const [shareSession, setShareSession] = useState(null);
   const [shareError, setShareError] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isExportingVideo, setIsExportingVideo] = useState(false);
+  const [videoExportError, setVideoExportError] = useState('');
   const [saveError, setSaveError] = useState('');
 
   const collageCanvasRef = useRef(null);
@@ -214,6 +216,23 @@ export default function App() {
     setTimeout(() => {
       window.print();
     }, 150);
+  };
+
+  const handleDownloadVideoCollage = async () => {
+    if (isExportingVideo) return;
+    setVideoExportError('');
+    setIsExportingVideo(true);
+    try {
+      const session = await handleSaveCurrentSession();
+      if (!session) throw new Error('The photobooth session could not be saved.');
+      const { downloadVideoCollage } = await import('./services/videoCollage');
+      await downloadVideoCollage(session);
+    } catch (error) {
+      console.error('Video collage export failed:', error);
+      setVideoExportError(error.message || 'Could not save the video collage. Please try again.');
+    } finally {
+      setIsExportingVideo(false);
+    }
   };
 
   // Open Share Modal
@@ -449,6 +468,17 @@ export default function App() {
                   {isPublishing ? 'Preparing Link...' : 'Share & QR'}
                 </button>
 
+                {hasMotionClips && (
+                  <button
+                    onClick={handleDownloadVideoCollage}
+                    disabled={isExportingVideo}
+                    className="min-w-[130px] flex-1 justify-center px-3 sm:px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-bold text-[10px] sm:text-xs flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
+                  >
+                    <Film size={16} />
+                    {isExportingVideo ? 'Creating video...' : 'Save Video Collage'}
+                  </button>
+                )}
+
                 {collageOutput === 'photo' && (
                   <button
                     onClick={handlePrint}
@@ -462,6 +492,11 @@ export default function App() {
               {shareError && (
                 <p role="alert" className="w-full mt-2 text-center text-xs text-red-400">
                   {shareError}
+                </p>
+              )}
+              {videoExportError && (
+                <p role="alert" className="w-full mt-2 text-center text-xs text-red-400">
+                  {videoExportError}
                 </p>
               )}
               {saveError && (
