@@ -168,6 +168,11 @@ export default function SessionView({ sessionId, onOpenBooth }) {
           <p className="text-xs text-white/60 mt-1">
             {session.watermarkSettings?.subtitle || new Date(session.createdAt).toLocaleDateString()}
           </p>
+          {session.expiresAt && (
+            <p className="text-[11px] text-amber-200/80 mt-1">
+              This link expires {new Date(session.expiresAt).toLocaleString()}; stored media is removed shortly after.
+            </p>
+          )}
         </div>
 
         {/* Live Motion Playback Button */}

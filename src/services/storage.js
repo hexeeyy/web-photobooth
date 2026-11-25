@@ -1,7 +1,16 @@
-// Dual-Layer Storage Service: High-Capacity Client IndexedDB + Optional Server Sync
+// Temporary IndexedDB storage with optional server sync.
+import { SESSION_RETENTION_MS } from '../constants/sessionRetention.js';
+
 const DB_NAME = 'WebPhotoboothDB';
 const DB_VERSION = 2;
 const STORE_SESSIONS = 'sessions';
+
+function isExpiredSession(session) {
+  const expiresAt = Number(session.expiresAt);
+  if (Number.isFinite(expiresAt) && expiresAt > 0) return expiresAt <= Date.now();
+  const createdAt = Number(session.createdAt);
+  return !createdAt || createdAt + SESSION_RETENTION_MS <= Date.now();
+}
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -31,6 +40,29 @@ async function getLocalSession(id) {
     const request = db.transaction(STORE_SESSIONS, 'readonly').objectStore(STORE_SESSIONS).get(id);
     request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
+  });
+}
+
+export async function pruneExpiredLocalSessions() {
+  const db = await openDB();
+  const cutoff = Date.now() - SESSION_RETENTION_MS;
+
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_SESSIONS, 'readwrite');
+    const store = tx.objectStore(STORE_SESSIONS);
+    const request = store.index('createdAt').openKeyCursor(IDBKeyRange.upperBound(cutoff));
+
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (cursor) {
+        store.delete(cursor.primaryKey);
+        cursor.continue();
+      }
+    };
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
   });
 }
 
@@ -72,21 +104,21 @@ export async function saveSession(session) {
     const storedSession = {
       ...previous,
       ...session,
+      createdAt: previous?.createdAt || session.createdAt || Date.now(),
       ownerToken: session.ownerToken || previous?.ownerToken,
       packageUrl: session.packageUrl || previous?.packageUrl,
       collageUrl: session.collageUrl || previous?.collageUrl,
     };
+    const savedSession = { ...storedSession, updatedAt: Date.now() };
     const db = await openDB();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_SESSIONS, 'readwrite');
       const store = tx.objectStore(STORE_SESSIONS);
-      const req = store.put({
-        ...storedSession,
-        updatedAt: Date.now()
-      });
+      const req = store.put(savedSession);
       req.onsuccess = () => resolve(session);
       req.onerror = () => reject(req.error);
     });
+    session = savedSession;
   } catch (err) {
     console.warn('Local IndexedDB write error:', err);
     throw err;
@@ -186,12 +218,13 @@ export async function publishSession(session) {
     packageUrl: packageBlob.url,
     collageUrl: collage.url,
   };
-  await saveManifest(publishedManifest);
+  const savedManifest = await saveManifest(publishedManifest);
 
   const publishedSession = {
     ...session,
     ownerToken,
     ...publishedManifest,
+    expiresAt: savedManifest.expiresAt,
     collageDataUrl: collage.url,
   };
   await saveSession(publishedSession);
@@ -199,12 +232,19 @@ export async function publishSession(session) {
 }
 
 export async function getAllSessions() {
+  try {
+    await pruneExpiredLocalSessions();
+  } catch (error) {
+    console.warn('Expired local session cleanup failed:', error);
+  }
+
   // First try server API for cross-device sessions
   try {
     const res = await fetch('/api/sessions');
     if (res.ok) {
       const serverSessions = await res.json();
       if (Array.isArray(serverSessions) && serverSessions.length > 0) {
+        const activeServerSessions = serverSessions.filter((session) => !isExpiredSession(session));
         // Also merge with local DB
         try {
           const db = await openDB();
@@ -217,14 +257,14 @@ export async function getAllSessions() {
           // Merge by ID
           const map = new Map();
           localSessions.forEach((s) => map.set(s.id, s));
-          serverSessions.forEach((s) => {
+          activeServerSessions.forEach((s) => {
             if (!map.has(s.id)) map.set(s.id, s);
           });
           const merged = Array.from(map.values());
           merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           return merged;
         } catch (e) {
-          return serverSessions;
+          return activeServerSessions;
         }
       }
     }
@@ -241,7 +281,7 @@ export async function getAllSessions() {
       const req = store.getAll();
 
       req.onsuccess = () => {
-        const results = req.result || [];
+        const results = (req.result || []).filter((session) => !isExpiredSession(session));
         results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         resolve(results.map(rehydrateSession));
       };
@@ -255,8 +295,13 @@ export async function getAllSessions() {
 export async function getSession(id) {
   // Check local IndexedDB first
   try {
+    await pruneExpiredLocalSessions();
+  } catch (error) {
+    console.warn('Expired local session cleanup failed:', error);
+  }
+  try {
     const local = await getLocalSession(id);
-    if (local) return rehydrateSession(local);
+    if (local && !isExpiredSession(local)) return rehydrateSession(local);
   } catch (error) {
     console.warn('Local session lookup failed:', error);
   }

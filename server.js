@@ -3,6 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SESSION_RETENTION_MS } from './src/constants/sessionRetention.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +23,11 @@ if (!fs.existsSync(SESSIONS_FILE)) {
 function readSessions() {
   try {
     const raw = fs.readFileSync(SESSIONS_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const sessions = JSON.parse(raw);
+    const cutoff = Date.now() - SESSION_RETENTION_MS;
+    const activeSessions = sessions.filter((session) => Number(session.createdAt) > cutoff);
+    if (activeSessions.length !== sessions.length) writeSessions(activeSessions);
+    return activeSessions;
   } catch (e) {
     return [];
   }
@@ -31,6 +36,9 @@ function readSessions() {
 function writeSessions(sessions) {
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
 }
+
+readSessions();
+setInterval(readSessions, 60 * 60 * 1000);
 
 const server = http.createServer((req, res) => {
   // Enable CORS

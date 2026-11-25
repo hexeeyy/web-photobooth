@@ -1,0 +1,26 @@
+name: Clean up expired sessions
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Delete expired Vercel Blob sessions
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$SITE_URL" ]; then
+            echo "Configure CRON_SECRET and SITE_URL in GitHub Actions settings." >&2
+            exit 1
+          fi
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL%/}/api/cleanup-sessions"

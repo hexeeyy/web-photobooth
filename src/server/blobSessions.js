@@ -1,5 +1,6 @@
-import { list } from '@vercel/blob';
+import { del, list } from '@vercel/blob';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { SESSION_RETENTION_MS } from '../constants/sessionRetention.js';
 
 export const isValidSessionId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_-]{8,100}$/.test(id);
 
@@ -22,7 +23,24 @@ export async function getStoredManifest(id) {
 
   const response = await fetch(blob.url);
   if (!response.ok) throw new Error(`Could not read the session manifest (${response.status}).`);
-  return { blob, manifest: await response.json() };
+  const manifest = await response.json();
+  const expiresAt = Number(manifest.expiresAt)
+    || (Number(manifest.createdAt) || blob.uploadedAt.getTime()) + SESSION_RETENTION_MS;
+
+  if (expiresAt <= Date.now()) {
+    await deleteStoredSession({ blob, manifest });
+    return null;
+  }
+
+  return { blob, manifest: { ...manifest, expiresAt } };
+}
+
+export async function deleteStoredSession({ blob, manifest }) {
+  const mediaUrls = [manifest.packageUrl, manifest.collageUrl].filter(
+    (url) => typeof url === 'string'
+  );
+  if (mediaUrls.length) await del(mediaUrls);
+  await del(blob.url, { ifMatch: blob.etag });
 }
 
 export function toPublicManifest(manifest) {

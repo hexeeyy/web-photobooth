@@ -179,6 +179,9 @@ export default function ShareModal({
             {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
+        <p className="w-full text-center text-[11px] text-amber-200/80 mb-4">
+          This link expires after 36 hours. Uploaded photos and videos are removed by the hourly cleanup shortly after.
+        </p>
 
         {/* Action Buttons */}
         <div className="w-full grid grid-cols-2 gap-2 mb-2">

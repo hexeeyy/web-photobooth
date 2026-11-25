@@ -4,8 +4,10 @@ import {
   hashOwnerToken,
   isValidSessionId,
   ownerTokenMatches,
+  deleteStoredSession,
   toPublicManifest,
 } from '../src/server/blobSessions.js';
+import { SESSION_RETENTION_MS } from '../src/constants/sessionRetention.js';
 
 function sendError(response, status, message) {
   response.status(status).json({ error: message });
@@ -66,6 +68,7 @@ export default async function handler(request, response) {
         ...previous,
         id,
         createdAt: Number(manifestData.createdAt) || previous.createdAt || Date.now(),
+        expiresAt: Number(previous.expiresAt) || Date.now() + SESSION_RETENTION_MS,
         layoutId: String(manifestData.layoutId || previous.layoutId || 'strip-4'),
         selectedFilterId: String(manifestData.selectedFilterId || previous.selectedFilterId || 'normal'),
         frameSettings: manifestData.frameSettings || previous.frameSettings || null,
@@ -116,7 +119,7 @@ export default async function handler(request, response) {
         return sendError(response, 403, 'You do not own this shared session.');
       }
 
-      await del([stored.blob.url, stored.manifest.packageUrl, stored.manifest.collageUrl].filter(Boolean));
+      await deleteStoredSession(stored);
       return response.status(200).json({ success: true });
     }
 

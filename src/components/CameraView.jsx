@@ -22,6 +22,11 @@ export default function CameraView({
   const videoChunksRef = useRef([]);
 
   const [facingMode, setFacingMode] = useState('user'); // 'user' (selfie) or 'environment' (back)
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [zoomRange, setZoomRange] = useState(null);
+  const [cameraZoom, setCameraZoom] = useState(null);
+  const [cameraControlError, setCameraControlError] = useState('');
   const [hasPermission, setHasPermission] = useState(null);
   const [permissionError, setPermissionError] = useState('');
   
@@ -39,7 +44,7 @@ export default function CameraView({
   const [previewClipUrl, setPreviewClipUrl] = useState(null);
 
   // Initialize Camera
-  const startCamera = useCallback(async (facing) => {
+  const startCamera = useCallback(async (facing, deviceId = '') => {
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -47,15 +52,26 @@ export default function CameraView({
 
       const constraints = {
         video: {
-          facingMode: facing,
+          ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: facing } }),
           width: { ideal: 1920 },
           height: { ideal: 1080 },
+          frameRate: { ideal: 30, max: 30 },
         },
         audio: false // audio not strictly required for photobooth clips and avoids mic permission block
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+      const track = stream.getVideoTracks()[0];
+      const actualFacingMode = track?.getSettings().facingMode;
+      const zoomCapabilities = track?.getCapabilities?.().zoom;
+      setZoomRange(zoomCapabilities ? { min: zoomCapabilities.min, max: zoomCapabilities.max } : null);
+      setCameraZoom(track?.getSettings().zoom ?? null);
+      if (actualFacingMode && actualFacingMode !== facing) setFacingMode(actualFacingMode);
+      if (navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        setVideoDevices(devices.filter((device) => device.kind === 'videoinput'));
+      }
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -73,18 +89,42 @@ export default function CameraView({
   }, []);
 
   useEffect(() => {
-    startCamera(facingMode);
+    startCamera(facingMode, selectedDeviceId);
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [facingMode, startCamera]);
+  }, [facingMode, selectedDeviceId, startCamera]);
 
   // Flip Camera
   const toggleFacingMode = () => {
     const nextFacing = facingMode === 'user' ? 'environment' : 'user';
+    setSelectedDeviceId('');
     setFacingMode(nextFacing);
+  };
+
+  const handleSelectCamera = (event) => {
+    setCameraControlError('');
+    const deviceId = event.target.value;
+    setSelectedDeviceId(deviceId);
+    const selectedDevice = videoDevices.find((device) => device.deviceId === deviceId);
+    const label = selectedDevice?.label.toLowerCase() || '';
+    if (/front|user|selfie|facetime/.test(label)) setFacingMode('user');
+    else if (deviceId) setFacingMode('environment');
+  };
+
+  const handleSetCameraZoom = async (zoom) => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    setCameraControlError('');
+    try {
+      await track.applyConstraints({ advanced: [{ zoom }] });
+      setCameraZoom(track.getSettings().zoom ?? zoom);
+    } catch (error) {
+      console.error('Camera lens change failed:', error);
+      setCameraControlError('This camera could not switch lenses.');
+    }
   };
 
   // Helper to get supported mime type for MediaRecorder
@@ -362,6 +402,23 @@ export default function CameraView({
           >
             {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} className="text-white/40" />}
           </button>
+          {videoDevices.length > 1 && (
+            <select
+              aria-label="Select camera lens"
+              value={selectedDeviceId}
+              onChange={handleSelectCamera}
+              className="max-w-28 rounded-full bg-white/10 px-2 py-1.5 text-[10px] text-white backdrop-blur-md"
+            >
+              <option value="" className="bg-zinc-900">
+                Default {facingMode === 'user' ? 'Front' : 'Rear'} Camera
+              </option>
+              {videoDevices.map((device, index) => (
+                <option key={device.deviceId} value={device.deviceId} className="bg-zinc-900">
+                  {device.label || `Camera ${index + 1}`}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             onClick={toggleFacingMode}
             className="p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95"
@@ -374,12 +431,36 @@ export default function CameraView({
 
       {/* Main Viewfinder */}
       <div className="camera-viewfinder relative flex-1 min-h-0 flex items-center justify-center overflow-hidden w-full">
+        {zoomRange && zoomRange.min < 1 && zoomRange.max >= 1 && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-black/50 p-1 backdrop-blur-md">
+            {[zoomRange.min, 1].map((zoom) => (
+              <button
+                key={zoom}
+                type="button"
+                onClick={() => handleSetCameraZoom(zoom)}
+                aria-pressed={cameraZoom !== null && Math.abs(cameraZoom - zoom) < 0.01}
+                className={`min-w-10 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                  cameraZoom !== null && Math.abs(cameraZoom - zoom) < 0.01
+                    ? 'bg-white text-zinc-900'
+                    : 'text-white/80'
+                }`}
+              >
+                {zoom === 1 ? '1× Main' : `${zoom.toFixed(1)}×`}
+              </button>
+            ))}
+          </div>
+        )}
+        {cameraControlError && (
+          <p role="alert" className="absolute top-14 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-black/75 px-3 py-2 text-center text-xs text-red-200">
+            {cameraControlError}
+          </p>
+        )}
         {permissionError ? (
           <div className="text-center p-6 max-w-sm bg-zinc-900/90 border border-white/10 rounded-2xl shadow-2xl">
             <p className="text-white/80 font-medium mb-4 text-xs">{permissionError}</p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => startCamera(facingMode)}
+                onClick={() => startCamera(facingMode, selectedDeviceId)}
                 className="px-4 py-2 bg-rose-600 rounded-xl font-bold text-xs hover:bg-rose-500 active:scale-95 text-white"
               >
                 Retry Camera

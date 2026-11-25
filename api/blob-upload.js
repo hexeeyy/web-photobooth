@@ -30,6 +30,7 @@ export default async function handler(request, response) {
           allowedContentTypes: isPackage ? ['application/zip'] : ['image/jpeg'],
           maximumSizeInBytes: 100 * 1024 * 1024,
           addRandomSuffix: true,
+          cacheControlMaxAge: 60,
         };
       },
     });

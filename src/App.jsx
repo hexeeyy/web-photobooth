@@ -1,15 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { Image as ImageIcon, Share2, Printer, RotateCcw, Film } from 'lucide-react';
+import { getLayoutById } from './constants/layouts';
+import {
+  getSession,
+  pruneExpiredLocalSessions,
+  publishSession,
+  saveSession,
+  rehydrateSession,
+} from './services/storage';
+import { playCelebrationChime } from './services/audio';
 import CameraView from './components/CameraView';
 import CollageCanvas from './components/CollageCanvas';
 import EditorControls from './components/EditorControls';
-import ShareModal from './components/ShareModal';
-import CuratedGallery from './components/CuratedGallery';
-import SessionView from './components/SessionView';
-import { getLayoutById } from './constants/layouts';
-import { getSession, publishSession, saveSession, rehydrateSession } from './services/storage';
-import { playCelebrationChime } from './services/audio';
+const ShareModal = lazy(() => import('./components/ShareModal'));
+const CuratedGallery = lazy(() => import('./components/CuratedGallery'));
+const SessionView = lazy(() => import('./components/SessionView'));
 
 export default function App() {
   // Navigation View: 'booth' | 'editor' | 'gallery' | 'session'
@@ -60,6 +66,17 @@ export default function App() {
   const [saveError, setSaveError] = useState('');
 
   const collageCanvasRef = useRef(null);
+
+  useEffect(() => {
+    const cleanupExpiredSessions = () => {
+      pruneExpiredLocalSessions().catch((error) => {
+        console.warn('Expired local session cleanup failed:', error);
+      });
+    };
+    cleanupExpiredSessions();
+    const intervalId = setInterval(cleanupExpiredSessions, 60 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   // 1. Check for ?session=<id> in URL for instant mobile share view
   useEffect(() => {
@@ -142,8 +159,7 @@ export default function App() {
         collageDataUrl: url || collageDataUrl,
         favorite: false,
       };
-      await saveSession(sessionData);
-      return sessionData;
+      return await saveSession(sessionData);
     } catch (e) {
       console.error('Failed to auto-save session:', e);
       setSaveError('Could not save this session on this device. Please keep this page open and try again.');
@@ -311,14 +327,15 @@ export default function App() {
   // Render view router
   if (currentView === 'session') {
     return (
-      <SessionView
-        sessionId={sessionParamId}
-        onOpenBooth={() => {
-          // Clear query param and switch to booth
-          window.history.pushState({}, '', window.location.pathname);
-          setCurrentView('booth');
-        }}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+        <SessionView
+          sessionId={sessionParamId}
+          onOpenBooth={() => {
+            window.history.pushState({}, '', window.location.pathname);
+            setCurrentView('booth');
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -326,27 +343,33 @@ export default function App() {
     return (
       <>
         <div className="no-print">
-          <CuratedGallery
-            onBackToBooth={() => setCurrentView('booth')}
-            onSelectSession={handleSelectSessionFromGallery}
-            onOpenShareModal={handleShareGallerySession}
-          />
+          <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+            <CuratedGallery
+              onBackToBooth={() => setCurrentView('booth')}
+              onSelectSession={handleSelectSessionFromGallery}
+              onOpenShareModal={handleShareGallerySession}
+            />
+          </Suspense>
           {shareError && (
             <p role="alert" className="fixed bottom-4 left-4 right-4 z-40 text-center text-xs text-red-300 bg-zinc-900/95 border border-red-500/30 rounded-xl p-3">
               {shareError}
             </p>
           )}
         </div>
-        <ShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          session={shareSession}
-          collageDataUrl={collageDataUrl}
-          onPrint={() => {
-            setIsShareModalOpen(false);
-            setTimeout(() => window.print(), 150);
-          }}
-        />
+        {isShareModalOpen && (
+          <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/85" />}>
+            <ShareModal
+              isOpen={isShareModalOpen}
+              onClose={() => setIsShareModalOpen(false)}
+              session={shareSession}
+              collageDataUrl={collageDataUrl}
+              onPrint={() => {
+                setIsShareModalOpen(false);
+                setTimeout(() => window.print(), 150);
+              }}
+            />
+          </Suspense>
+        )}
         <div className="print-only hidden">
           {collageDataUrl && <img src={collageDataUrl} alt="Photobooth collage" className="max-h-screen w-auto" />}
         </div>
@@ -533,24 +556,28 @@ export default function App() {
       )}
 
       {/* Share & QR Code Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        session={{
-          ...(shareSession || {
-            id: currentSessionId,
-            layoutId,
-            photoCount,
-            selectedFilterId,
-            frameSettings,
-            photos: capturedPhotos,
-            watermarkSettings,
-            stickers,
-          }),
-        }}
-        collageDataUrl={collageDataUrl}
-        onPrint={handlePrint}
-      />
+      {isShareModalOpen && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/85" />}>
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            session={{
+              ...(shareSession || {
+                id: currentSessionId,
+                layoutId,
+                photoCount,
+                selectedFilterId,
+                frameSettings,
+                photos: capturedPhotos,
+                watermarkSettings,
+                stickers,
+              }),
+            }}
+            collageDataUrl={collageDataUrl}
+            onPrint={handlePrint}
+          />
+        </Suspense>
+      )}
 
       {/* Print-Only CSS Render Container */}
       <div className="print-only hidden">
