@@ -417,12 +417,31 @@ const CollageCanvas = forwardRef(function CollageCanvas(
                 }}
               >
                 {photo ? (
-                  <img
-                    src={photo.rawDataUrl || photo.dataUrl}
-                    alt={`Booth Shot ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    style={{ filter: activeFilter.cssFilter }}
-                  />
+                  <>
+                    <img
+                      src={photo.rawDataUrl || photo.dataUrl}
+                      alt={`Booth Shot ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      style={{ filter: activeFilter.cssFilter }}
+                    />
+                    {isPlayingLiveClips && photo.videoUrl && (
+                      <video
+                        key={`custom-vid-${photo.id || index}`}
+                        src={photo.videoUrl}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        webkit-playsinline="true"
+                        poster={photo.rawDataUrl || photo.dataUrl}
+                        onLoadedData={(e) => {
+                          e.target.play().catch(() => {});
+                        }}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ filter: activeFilter.cssFilter }}
+                      />
+                    )}
+                  </>
                 ) : (
                   <div className="w-full h-full bg-zinc-300/30" />
                 )}
